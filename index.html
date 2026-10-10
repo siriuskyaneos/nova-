@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, user-scalable=no">
+<meta name="theme-color" content="#050811">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="NOVA">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="icon-192.png">
+<title>NOVA - Cosmic Tracker</title>
+<style>
+:root{
+  --primary:#ff6b8b; --pink:#ff8da1; --bg:#050811; --card:rgba(11,19,43,.62);
+  --blue:#4a90e2; --purple:#8a5cf6; --violet:#5b2bbd; --deep:#0b132b;
+  --ok:#2ecc71; --bad:#e74c3c; --text:#fff; --muted:rgba(255,255,255,.65);
+  --line:rgba(255,255,255,.09);
+  --nav-w:96px;
+}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;margin:0}
+body{
+  font-family:'Segoe UI',system-ui,-apple-system,Roboto,sans-serif;color:var(--text);
+  background:var(--bg);overflow:hidden;user-select:none;-webkit-user-select:none;
+}
+input,textarea,select{user-select:text;-webkit-user-select:text}
+/* ===== galaxy background ===== */
+#galaxy{position:fixed;inset:0;z-index:0;
+  background:
+   radial-gradient(ellipse 60% 45% at 15% 15%,rgba(138,92,246,.38),transparent 70%),
+   radial-gradient(ellipse 55% 50% at 90% 25%,rgba(74,144,226,.34),transparent 70%),
+   radial-gradient(ellipse 60% 55% at 70% 95%,rgba(255,107,139,.22),transparent 70%),
+   radial-gradient(ellipse 50% 40% at 5% 85%,rgba(91,43,189,.38),transparent 70%),
+   linear-gradient(160deg,#0b132b 0%,#120a35 45%,#050811 100%);
+}
+#stars{position:fixed;inset:0;z-index:1;pointer-events:none}
+/* ===== layout ===== */
+#app{position:relative;z-index:2;height:100%;display:flex;flex-direction:row}
+nav{
+  width:var(--nav-w);flex:none;display:flex;flex-direction:column;align-items:center;gap:6px;
+  padding:calc(14px + env(safe-area-inset-top)) 8px calc(14px + env(safe-area-inset-bottom));
+  background:linear-gradient(180deg,rgba(11,19,43,.85),rgba(18,10,53,.8));
+  border-right:1px solid rgba(255,107,139,.18);backdrop-filter:blur(14px);-webkit-backdrop-filter:blur(14px);
+}
+nav .brand{width:54px;height:54px;filter:drop-shadow(0 0 8px var(--primary));margin-bottom:8px}
+.nav-btn{
+  width:100%;background:none;border:none;color:var(--muted);padding:9px 2px;border-radius:14px;
+  display:flex;flex-direction:column;align-items:center;gap:3px;font-size:11px;cursor:pointer;transition:.25s;
+}
+.nav-btn .ic{font-size:22px;line-height:1}
+.nav-btn.active{color:#fff;background:linear-gradient(135deg,rgba(255,107,139,.28),rgba(138,92,246,.3));
+  box-shadow:0 0 14px rgba(138,92,246,.45), inset 0 0 0 1px rgba(255,141,161,.4)}
+main{flex:1;min-width:0;overflow-y:auto;overflow-x:hidden;-webkit-overflow-scrolling:touch;
+  padding:calc(18px + env(safe-area-inset-top)) 22px 40px}
+.page{display:none;max-width:900px;margin:0 auto;animation:fade .35s ease}
+.page.active{display:block}
+@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+h1{font-size:26px;margin:4px 0 2px;letter-spacing:1px;
+  background:linear-gradient(90deg,var(--pink),#b9a2ff,var(--blue));-webkit-background-clip:text;background-clip:text;color:transparent}
+.sub{font-size:13px;color:var(--muted);margin:0 0 16px}
+h3{margin:0 0 10px;font-size:16px;color:#fff}
+.grid{display:grid;gap:14px;grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}
+.card{
+  background:var(--card);border:1px solid var(--line);border-radius:20px;padding:16px;margin-bottom:14px;
+  backdrop-filter:blur(12px);-webkit-backdrop-filter:blur(12px);
+  box-shadow:0 8px 28px rgba(0,0,0,.35), inset 0 1px 0 rgba(255,255,255,.05);
+}
+.card.glow{border-color:rgba(255,107,139,.45);box-shadow:0 0 22px rgba(255,107,139,.18),0 8px 28px rgba(0,0,0,.35)}
+.grid .card{margin-bottom:0}
+.btn{
+  background:linear-gradient(135deg,var(--primary),#c45bd6);color:#fff;border:none;padding:11px 16px;border-radius:12px;
+  cursor:pointer;font-weight:700;font-size:14px;transition:.25s;font-family:inherit;
+}
+.btn:active{transform:scale(.97)}
+.btn:hover{box-shadow:0 0 14px var(--pink)}
+.btn.block{width:100%;margin-top:8px}
+.btn.alt{background:linear-gradient(135deg,var(--blue),var(--purple))}
+.btn.ghost{background:rgba(255,255,255,.08);box-shadow:none}
+.btn.ok{background:linear-gradient(135deg,#27ae60,#1abc9c)}
+.btn.sm{padding:6px 11px;font-size:12px;border-radius:9px}
+.btn.danger{background:linear-gradient(135deg,#7f8c8d,#e74c3c)}
+input,select,textarea{
+  width:100%;padding:11px;background:rgba(28,37,65,.8);border:1px solid rgba(138,92,246,.4);color:#fff;border-radius:10px;
+  font-size:15px;font-family:inherit;margin:4px 0 10px;outline:none}
+input:focus,select:focus,textarea:focus{border-color:var(--pink);box-shadow:0 0 0 2px rgba(255,107,139,.25)}
+label{font-size:12px;color:var(--muted)}
+.row{display:flex;align-items:center;gap:10px;justify-content:space-between;margin-bottom:8px}
+.row>input,.row>select{margin:0}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.grid2{display:grid;grid-template-columns:repeat(2,1fr);gap:10px}
+.bar{height:16px;border-radius:10px;background:rgba(28,37,65,.9);overflow:hidden;margin:8px 0}
+.bar>i{display:block;height:100%;width:0;background:linear-gradient(90deg,var(--primary),var(--purple),var(--blue));transition:width .6s ease}
+.stat{background:rgba(28,37,65,.55);border:1px solid var(--line);border-radius:14px;padding:12px;text-align:center}
+.stat b{display:block;font-size:22px;color:var(--pink)}
+.stat span{font-size:11px;color:var(--muted)}
+.ring{position:relative;width:120px;height:120px;margin:0 auto}
+.ring svg{transform:rotate(-90deg)}
+.ring .v{position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center;font-weight:700}
+.ring .v small{font-weight:400;font-size:10px;color:var(--muted)}
+.banner{background:linear-gradient(90deg,#f1c40f,#f39c12);color:#000;padding:10px;border-radius:12px;margin-bottom:12px;text-align:center;font-weight:700;font-size:13px;display:none}
+.item{display:flex;justify-content:space-between;align-items:center;padding:8px 4px;border-bottom:1px solid var(--line);font-size:13px;gap:8px}
+.item:last-child{border:none}
+.chip{display:inline-block;padding:5px 11px;border-radius:20px;font-size:12px;background:rgba(138,92,246,.25);border:1px solid rgba(138,92,246,.5);margin:2px;cursor:pointer}
+.chip.on{background:linear-gradient(135deg,var(--primary),var(--purple));border-color:transparent}
+.toggle-row{display:flex;align-items:center;justify-content:space-between;padding:12px 4px;border-bottom:1px solid var(--line)}
+.toggle-row:last-child{border:none}
+.toggle-row input{width:26px;height:26px;margin:0;accent-color:var(--primary)}
+/* timer */
+.timer{font-size:64px;text-align:center;font-weight:800;letter-spacing:3px;margin:8px 0;text-shadow:0 0 22px rgba(138,92,246,.7)}
+.avatar{font-size:60px;text-align:center;animation:bounce 2s infinite}
+@keyframes bounce{0%,100%{transform:translateY(0)}50%{transform:translateY(-10px)}}
+/* overlays */
+.overlay{display:none;position:fixed;inset:0;z-index:1000;background:rgba(5,8,17,.9);backdrop-filter:blur(8px);
+  justify-content:center;align-items:center;padding:20px;text-align:center}
+.overlay.show{display:flex}
+.overlay-content{background:linear-gradient(160deg,#0b132b,#1a0f45);border:2px solid var(--primary);padding:28px;border-radius:24px;
+  max-width:420px;box-shadow:0 0 36px var(--primary)}
+.glass{width:80px;height:120px;border:4px solid #fff;border-top:none;border-radius:0 0 12px 12px;position:relative;margin:18px auto;overflow:hidden;background:rgba(255,255,255,.1)}
+.glass i{position:absolute;bottom:0;left:0;width:100%;background:linear-gradient(#6bb7ff,#4a90e2);animation:pour 3s forwards}
+@keyframes pour{from{height:0}to{height:100%}}
+/* chat */
+.chat{max-height:300px;overflow-y:auto;display:flex;flex-direction:column;gap:8px;margin-bottom:10px}
+.bub{padding:10px 13px;border-radius:14px;font-size:13px;max-width:88%;line-height:1.45}
+.bub.bot{background:rgba(138,92,246,.28);border:1px solid rgba(138,92,246,.5);align-self:flex-start;font-style:italic}
+.bub.me{background:rgba(255,107,139,.3);align-self:flex-end}
+/* chart */
+.chart{width:100%;height:170px}
+.toast{position:fixed;left:50%;bottom:30px;transform:translateX(-50%) translateY(80px);background:#1c2541;border:1px solid var(--primary);
+  padding:10px 18px;border-radius:30px;z-index:2000;transition:.4s;font-size:13px;opacity:0}
+.toast.show{transform:translateX(-50%);opacity:1}
+/* portrait / phone */
+@media (max-width:640px){
+  :root{--nav-w:0px}
+  #app{flex-direction:column-reverse}
+  nav{width:100%;flex-direction:row;justify-content:space-around;border-right:none;border-top:1px solid rgba(255,107,139,.2);padding:6px 4px calc(6px + env(safe-area-inset-bottom))}
+  nav .brand{display:none}
+  .nav-btn{padding:6px 0;font-size:10px}
+  main{padding:calc(14px + env(safe-area-inset-top)) 14px 20px}
+  .timer{font-size:52px}
+}
+@media print{
+  body{overflow:visible;background:#fff;color:#000}
+  #galaxy,#stars,nav,.noprint{display:none!important}
+  main{overflow:visible}
+  .page{display:block!important}
+  .card{background:#fff;border:1px solid #999;color:#000;box-shadow:none}
+  h1,h3,.stat b{color:#000;-webkit-text-fill-color:#000}
+}
+</style>
+</head>
+<body>
+<div id="galaxy"></div>
+<canvas id="stars"></canvas>
+
+<div id="app">
+<nav>
+  <svg class="brand" viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+    <defs><linearGradient id="moonGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#4a90e2"/><stop offset="100%" stop-color="#0b132b"/></linearGradient></defs>
+    <path d="M20 50 A 30 30 0 1 0 80 50 A 24 24 0 1 1 20 50 Z" fill="url(#moonGrad)" stroke="#ff6b8b" stroke-width="1"/>
+    <path d="M35 65 Q 50 55 65 65 L 65 72 Q 50 62 35 72 Z" fill="#fff"/>
+    <line x1="50" y1="58" x2="50" y2="70" stroke="#050811" stroke-width="1"/>
+    <polygon points="50,25 53,32 60,32 55,36 57,43 50,39 43,43 45,36 40,32 47,32" fill="#ff6b8b"/>
+  </svg>
+  <button class="nav-btn active" data-page="home"><span class="ic">🌙</span>Home</button>
+  <button class="nav-btn" data-page="fuel"><span class="ic">🍱</span>Food</button>
+  <button class="nav-btn" data-page="move"><span class="ic">💧</span>Water</button>
+  <button class="nav-btn" data-page="study"><span class="ic">📚</span>Study</button>
+  <button class="nav-btn" data-page="soul"><span class="ic">✨</span>Soul</button>
+  <button class="nav-btn" data-page="mochi"><span class="ic">🐰</span>Mochi</button>
+  <button class="nav-btn" data-page="settings"><span class="ic">⚙️</span>More</button>
+</nav>
+
+<main id="main">
+<div id="late-night-banner" class="banner">🌙 Late Night Nudge: Put down screens and rest well!</div>
+<div id="hydration-nudge" class="banner">💧 Hydration Nudge: You're behind on water today!</div>
+
+<!-- ================= HOME ================= -->
+<section class="page active" id="page-home">
+  <div style="text-align:center">
+    <svg width="110" height="110" viewBox="0 0 100 100" style="filter:drop-shadow(0 0 12px #ff6b8b)">
+      <path d="M20 50 A 30 30 0 1 0 80 50 A 24 24 0 1 1 20 50 Z" fill="url(#moonGrad)" stroke="#ff6b8b" stroke-width="1"/>
+      <path d="M35 65 Q 50 55 65 65 L 65 72 Q 50 62 35 72 Z" fill="#fff"/>
+      <line x1="50" y1="58" x2="50" y2="70" stroke="#050811" stroke-width="1"/>
+      <polygon points="50,25 53,32 60,32 55,36 57,43 50,39 43,43 45,36 40,32 47,32" fill="#ff6b8b"/>
+    </svg>
+    <h1 style="letter-spacing:6px;font-size:32px">NOVA</h1>
+    <p class="sub" id="home-sub">Self-Care, Study &amp; Journey</p>
+  </div>
+  <p class="sub" id="greeting" style="text-align:center;font-size:15px;color:var(--pink)"></p>
+
+  <div class="grid">
+    <div class="card glow">
+      <h3>⚖️ Weight Journey</h3>
+      <div class="grid3">
+        <div class="stat"><b id="h-cur">--</b><span>Current kg</span></div>
+        <div class="stat"><b id="h-lost">0</b><span>Lost kg</span></div>
+        <div class="stat"><b id="h-rem">--</b><span>To go kg</span></div>
+      </div>
+      <div class="bar"><i id="h-wbar"></i></div>
+      <button class="btn block alt" onclick="go('settings')">Log weight in More ➜</button>
+    </div>
+    <div class="card">
+      <h3>🔥 Today's Rings</h3>
+      <div class="grid3">
+        <div class="ring"><svg width="90" height="90"><circle cx="45" cy="45" r="38" stroke="rgba(255,255,255,.1)" stroke-width="8" fill="none"/><circle id="r-cal" cx="45" cy="45" r="38" stroke="#ff6b8b" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/></svg><div class="v" style="font-size:13px"><span id="rv-cal">0</span><small>kcal</small></div></div>
+        <div class="ring"><svg width="90" height="90"><circle cx="45" cy="45" r="38" stroke="rgba(255,255,255,.1)" stroke-width="8" fill="none"/><circle id="r-water" cx="45" cy="45" r="38" stroke="#4a90e2" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/></svg><div class="v" style="font-size:13px"><span id="rv-water">0</span><small>water</small></div></div>
+        <div class="ring"><svg width="90" height="90"><circle cx="45" cy="45" r="38" stroke="rgba(255,255,255,.1)" stroke-width="8" fill="none"/><circle id="r-steps" cx="45" cy="45" r="38" stroke="#8a5cf6" stroke-width="8" fill="none" stroke-linecap="round" stroke-dasharray="238.8" stroke-dashoffset="238.8"/></svg><div class="v" style="font-size:13px"><span id="rv-steps">0</span><small>steps</small></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🌸 Daily Habits</h3>
+      <div id="home-habits"></div>
+      <div class="sub" style="margin:8px 0 0">Streak: <b id="streak" style="color:var(--pink)">0</b> day(s) with all habits ✨</div>
+    </div>
+    <div class="card">
+      <h3>🎵 Cosmic Radio</h3>
+      <p id="track-playing" style="font-size:13px;color:var(--pink);margin:0 0 8px">Selected: Anime Lo-Fi</p>
+      <div class="grid3">
+        <button class="btn sm alt" onclick="switchRadio('anime')">🌸 Anime</button>
+        <button class="btn sm alt" onclick="switchRadio('piano')">🎹 Piano</button>
+        <button class="btn sm alt" onclick="switchRadio('chill')">✨ Chillhop</button>
+      </div>
+      <button class="btn block" id="play-pause-btn" onclick="toggleAudio()">▶ Play Tracks</button>
+      <p class="sub" style="margin:8px 0 0;font-size:11px">Radio streams need internet. Everything else works offline.</p>
+      <audio id="audio-stream" loop preload="none"><source id="audio-source" src="https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3" type="audio/mpeg"></audio>
+    </div>
+  </div>
+</section>
+
+<!-- ================= FOOD ================= -->
+<section class="page" id="page-fuel">
+  <h1>🍱 Food Diary</h1>
+  <p class="sub">Tap to add Indian foods and keep an eye on calories &amp; protein.</p>
+  <div class="grid">
+    <div class="card glow">
+      <h3>Today</h3>
+      <div class="row"><span id="cal-text">0 / 1350 kcal</span><span id="prot-text" style="color:var(--pink)">0 / 70 g protein</span></div>
+      <div class="bar"><i id="cal-bar"></i></div>
+      <div class="bar" style="height:10px"><i id="prot-bar" style="background:linear-gradient(90deg,var(--blue),var(--purple))"></i></div>
+      <div class="sub" id="net-text" style="margin:6px 0 0"></div>
+    </div>
+    <div class="card">
+      <h3>Quick Tap</h3>
+      <div class="grid3">
+        <button class="btn sm" onclick="addFoodByName('Chapati (Plain)')">+1 Roti<br>85k</button>
+        <button class="btn sm" onclick="addFoodByName('Dal (Lentils 1 Cup)')">+1 Dal<br>150k</button>
+        <button class="btn sm" onclick="addFoodByName('White Rice (1 Cup)')">+1 Rice<br>200k</button>
+      </div>
+      <div style="margin-top:10px">
+        <label>Meal tag for next item</label>
+        <div id="meal-chips"></div>
+      </div>
+    </div>
+  </div>
+  <div class="card" style="margin-top:14px">
+    <h3>🔍 Food Database</h3>
+    <input type="text" id="food-search" placeholder="Search (Sabzi, Paneer, Idli, Dosa...)" oninput="searchFood()">
+    <div id="search-results" style="max-height:260px;overflow-y:auto"></div>
+    <details style="margin-top:8px"><summary style="cursor:pointer;color:var(--pink);font-size:13px">➕ Add my own food</summary>
+      <div class="grid2" style="margin-top:8px">
+        <input id="cf-name" placeholder="Food name">
+        <input id="cf-cal" type="number" placeholder="Calories">
+        <input id="cf-prot" type="number" placeholder="Protein (g)">
+        <button class="btn" onclick="addCustomFood()">Save &amp; add</button>
+      </div>
+    </details>
+  </div>
+  <div class="card">
+    <h3>📋 Today's Log</h3>
+    <div id="food-log"></div>
+  </div>
+</section>
+
+<!-- ================= WATER & MOVE ================= -->
+<section class="page" id="page-move">
+  <h1>💧 Water &amp; Movement</h1>
+  <p class="sub">Stay hydrated and keep moving.</p>
+  <div class="grid">
+    <div class="card glow">
+      <h3>💧 Hydration</h3>
+      <div class="row"><span id="water-display">0 / 2500 ml</span><button class="btn" onclick="drinkWater(250)">+ 250ml</button></div>
+      <div class="bar"><i id="water-progress"></i></div>
+      <div class="grid3">
+        <button class="btn sm ghost" onclick="drinkWater(150)">+150</button>
+        <button class="btn sm ghost" onclick="drinkWater(500)">+500</button>
+        <button class="btn sm ghost" onclick="drinkWater(-250)">−250</button>
+      </div>
+      <div style="margin-top:12px">
+        <label>⏰ Reminder popup interval</label>
+        <select id="water-interval" onchange="changeInterval()">
+          <option value="30">Every 30 minutes</option><option value="45">Every 45 minutes</option><option value="60">Every 60 minutes</option>
+        </select>
+        <div id="water-countdown" class="sub" style="text-align:right;margin:0">Next alert in: --:--</div>
+        <button class="btn sm ghost" onclick="testWater()">Preview reminder</button>
+      </div>
+    </div>
+    <div class="card">
+      <h3>🚶‍♂️ Steps</h3>
+      <div class="row"><span id="steps-display">0 / 8000</span></div>
+      <div class="bar"><i id="steps-bar" style="background:linear-gradient(90deg,var(--blue),var(--purple))"></i></div>
+      <div class="row"><input type="number" id="steps-add" placeholder="Add steps e.g. 1000"><button class="btn" onclick="addSteps()">Add</button></div>
+      <div class="grid3">
+        <button class="btn sm ghost" onclick="quickSteps(500)">+500</button>
+        <button class="btn sm ghost" onclick="quickSteps(1000)">+1000</button>
+        <button class="btn sm ghost" onclick="quickSteps(-500)">−500</button>
+      </div>
+      <div id="active-burn" class="sub" style="margin-top:10px">Burned: 0 kcal</div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= STUDY ================= -->
+<section class="page" id="page-study">
+  <h1>📚 Study Timer</h1>
+  <p class="sub">Pomodoro with anime companions. Finish a session to earn XP.</p>
+  <div class="card glow" style="text-align:center">
+    <div class="avatar" id="study-avatar">🌸</div>
+    <div class="row" style="justify-content:center">
+      <label>Companion:</label>
+      <select id="anime-character" style="width:200px" onchange="syncStudy()">
+        <option value="aria">🌸 Aria (Scholar)</option>
+        <option value="ren">⚡ Ren (Rogue)</option>
+        <option value="sakura">❄️ Sakura (Sorceress)</option>
+      </select>
+    </div>
+    <div id="companion-xp" class="sub" style="color:var(--pink)"></div>
+    <div class="bar" style="max-width:340px;margin:0 auto 6px"><i id="xp-bar"></i></div>
+    <div id="timer-display" class="timer">25:00</div>
+    <div class="grid3" style="max-width:380px;margin:0 auto 6px">
+      <button class="btn sm ghost" onclick="setStudyLen(15)">15 min</button>
+      <button class="btn sm ghost" onclick="setStudyLen(25)">25 min</button>
+      <button class="btn sm ghost" onclick="setStudyLen(45)">45 min</button>
+    </div>
+    <div class="grid2" style="max-width:380px;margin:0 auto">
+      <button class="btn" id="study-btn" onclick="toggleStudyTimer()">▶ Start Session</button>
+      <button class="btn ghost" onclick="resetStudy()">↺ Reset</button>
+    </div>
+  </div>
+  <div class="grid">
+    <div class="card"><h3>📈 Study Stats</h3>
+      <div class="grid3">
+        <div class="stat"><b id="st-today">0</b><span>Sessions today</span></div>
+        <div class="stat"><b id="st-total">0</b><span>All time</span></div>
+        <div class="stat"><b id="st-xp">0</b><span>Total XP</span></div>
+      </div>
+    </div>
+    <div class="card"><h3>🏅 Companions</h3><div id="companion-list"></div></div>
+  </div>
+</section>
+
+<!-- ================= SOUL ================= -->
+<section class="page" id="page-soul">
+  <h1>✨ Soul &amp; Self-Care</h1>
+  <p class="sub">Wholesome habits, books and gratitude.</p>
+  <div class="grid">
+    <div class="card glow">
+      <h3>🌸 Habits</h3>
+      <div id="habit-list"></div>
+    </div>
+    <div class="card">
+      <h3>📖 Reading</h3>
+      <div class="row"><input type="number" id="pages-input" placeholder="Pages read"><button class="btn" onclick="savePages()">Log</button></div>
+      <div class="grid3" style="margin-bottom:8px">
+        <div class="stat"><b id="pg-today">0</b><span>Today</span></div>
+        <div class="stat"><b id="pg-week">0</b><span>7 days</span></div>
+        <div class="stat"><b id="pg-total">0</b><span>Total</span></div>
+      </div>
+      <input type="text" id="book-title" placeholder="Current book title" onchange="saveBook()">
+    </div>
+  </div>
+  <div class="card">
+    <h3>✍️ Gratitude Journal</h3>
+    <textarea id="gratitude-journal" rows="4" placeholder="What are you grateful for today?" oninput="saveJournal()"></textarea>
+    <details><summary style="cursor:pointer;color:var(--pink);font-size:13px">Past entries</summary><div id="journal-history" style="margin-top:8px"></div></details>
+  </div>
+</section>
+
+<!-- ================= MOCHI ================= -->
+<section class="page" id="page-mochi">
+  <h1>🐰 Mochi AI Guide</h1>
+  <p class="sub">Your cosy companion. Tap a command or type one.</p>
+  <div class="card glow">
+    <div class="chat" id="chat"></div>
+    <div style="margin-bottom:8px">
+      <span class="chip" onclick="mochi('status')">status</span>
+      <span class="chip" onclick="mochi('motivate')">motivate</span>
+      <span class="chip" onclick="mochi('recipe instant')">recipe instant</span>
+      <span class="chip" onclick="mochi('recipe cook')">recipe cook</span>
+      <span class="chip" onclick="mochi('verse')">verse</span>
+      <span class="chip" onclick="mochi('help')">help</span>
+    </div>
+    <div class="row"><input type="text" id="ai-command-input" placeholder="Type a command..." onkeydown="if(event.key==='Enter')sendMochi()"><button class="btn" onclick="sendMochi()">Send</button></div>
+  </div>
+</section>
+
+<!-- ================= SETTINGS / PROGRESS ================= -->
+<section class="page" id="page-settings">
+  <h1>⚙️ Progress &amp; Settings</h1>
+  <p class="sub">Log your weight, view progress and manage your goals.</p>
+  <div class="grid">
+    <div class="card glow">
+      <h3>⚖️ Log Weight</h3>
+      <div class="row"><input type="number" step="0.1" id="weight-input" placeholder="Current weight (kg)"><button class="btn" onclick="saveWeight()">Log</button></div>
+      <div id="weight-metrics" class="sub"></div>
+      <svg id="wchart" class="chart" viewBox="0 0 400 170" preserveAspectRatio="none"></svg>
+      <div id="weight-history" style="max-height:160px;overflow-y:auto"></div>
+    </div>
+    <div class="card">
+      <h3>🎯 My Goals</h3>
+      <div class="grid2">
+        <div><label>Starting weight (kg)</label><input type="number" step="0.1" id="s-start" onchange="saveSettings()"></div>
+        <div><label>Target weight (kg)</label><input type="number" step="0.1" id="s-goal" onchange="saveSettings()"></div>
+        <div><label>Calorie goal (kcal)</label><input type="number" id="s-cal" onchange="saveSettings()"></div>
+        <div><label>Protein goal (g)</label><input type="number" id="s-prot" onchange="saveSettings()"></div>
+        <div><label>Water goal (ml)</label><input type="number" id="s-water" onchange="saveSettings()"></div>
+        <div><label>Step goal</label><input type="number" id="s-steps" onchange="saveSettings()"></div>
+      </div>
+      <p class="sub" style="font-size:11px">Choose goals that feel kind and sustainable for you. A doctor or dietitian can help you set healthy targets.</p>
+    </div>
+  </div>
+  <div class="card">
+    <h3>📊 Last 7 Days</h3>
+    <svg id="weekchart" class="chart" viewBox="0 0 400 170" preserveAspectRatio="none"></svg>
+    <div class="sub" style="margin:0;text-align:center">Calories eaten per day (dotted line = goal)</div>
+  </div>
+  <div class="card noprint">
+    <h3>🧰 Tools</h3>
+    <div class="grid2">
+      <button class="btn ok" onclick="window.print()">📥 Print / Save PDF Summary</button>
+      <button class="btn alt" onclick="exportData()">💾 Backup data (.json)</button>
+      <button class="btn alt" onclick="document.getElementById('import-file').click()">📂 Restore backup</button>
+      <button class="btn ghost" onclick="askNotif()">🔔 Enable notifications</button>
+    </div>
+    <input type="file" id="import-file" accept=".json" style="display:none" onchange="importData(event)">
+    <button class="btn danger block" onclick="resetAllData()">⚠️ Reset All Data</button>
+  </div>
+</section>
+</main>
+</div>
+
+<!-- Overlays -->
+<div id="water-overlay" class="overlay"><div class="overlay-content">
+  <h2>🌊 Time to Hydrate!</h2>
+  <p>Mochi says: your body would love some water right now! ~uwu~</p>
+  <div class="glass"><i></i></div>
+  <button class="btn block" onclick="dismissWaterOverlay(true)">I Drank a Glass! (+250ml)</button>
+  <button class="btn block ghost" onclick="dismissWaterOverlay(false)">Remind me later</button>
+</div></div>
+<div id="study-overlay" class="overlay"><div class="overlay-content">
+  <div class="avatar" id="overlay-avatar">🌸</div>
+  <h2 id="overlay-char-name">Aria</h2>
+  <p id="overlay-char-dialogue"></p>
+  <button class="btn block" onclick="dismissStudyOverlay()">Break Completed! Collect +100 XP</button>
+</div></div>
+<div id="toast" class="toast"></div>
+
+<script>
+/* ================= DATA ================= */
+const KEY='nova_app_v1', OLD='noah_cosmic_data';
+const todayStr=(d=new Date())=>{const z=n=>String(n).padStart(2,'0');return d.getFullYear()+'-'+z(d.getMonth()+1)+'-'+z(d.getDate())};
+const defaults=()=>({
+  settings:{start:78,goal:47,cal:1350,prot:70,water:2500,steps:8000,interval:45,studyLen:25,book:'',character:'aria'},
+  weights:[], days:{}, xp:{aria:0,ren:0,sakura:0}, sessions:0, customFoods:[]
+});
+let S=defaults();
+function load(){
+  try{
+    const raw=localStorage.getItem(KEY);
+    if(raw){S=Object.assign(defaults(),JSON.parse(raw));S.settings=Object.assign(defaults().settings,S.settings);return}
+    const old=localStorage.getItem(OLD); // migrate from the single-page version
+    if(old){
+      const o=JSON.parse(old), d=day();
+      S.xp=Object.assign(S.xp,o.xp||{});
+      (o.weightLogs||[]).forEach(w=>S.weights.push({d:todayStr(),w:w}));
+      d.water=o.water||0;d.steps=o.steps||0;d.pages=o.pages||0;d.journal=o.journal||'';
+      d.habits=Object.assign(d.habits,o.habits||{});
+      if(o.calories) d.foods.push({n:'Earlier total',c:o.calories,p:o.protein||0,m:'Snack'});
+      save();
+    }
+  }catch(e){console.warn(e)}
+}
+function save(){try{localStorage.setItem(KEY,JSON.stringify(S))}catch(e){}}
+function day(k=todayStr()){
+  if(!S.days[k]) S.days[k]={foods:[],water:0,steps:0,pages:0,studySessions:0,habits:{church:false,prayer:false,sleep:false},journal:''};
+  return S.days[k];
+}
+const $=id=>document.getElementById(id);
+function toast(t){const e=$('toast');e.textContent=t;e.classList.add('show');clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove('show'),2200)}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+
+const foodDatabase=[
+ {n:"Chapati (Plain)",c:85,p:3},{n:"Chapati (Ghee)",c:120,p:3},{n:"Dal (Lentils 1 Cup)",c:150,p:7},
+ {n:"White Rice (1 Cup)",c:200,p:4},{n:"Brown Rice (1 Cup)",c:215,p:5},{n:"Veg Sabzi (1 Cup)",c:110,p:2},
+ {n:"Paneer Bhurji (1 Cup)",c:260,p:14},{n:"Idli (1 piece)",c:40,p:1.5},{n:"Plain Dosa",c:120,p:3},
+ {n:"Sambar (1 Cup)",c:130,p:6},{n:"Curd (1 Cup)",c:100,p:8},{n:"Boiled Egg",c:78,p:6},
+ {n:"Chana (Boiled 1 Cup)",c:270,p:15},{n:"Moong Sprouts (1 Cup)",c:100,p:7},{n:"Poha (1 Cup)",c:180,p:3},
+ {n:"Upma (1 Cup)",c:190,p:5},{n:"Banana",c:105,p:1},{n:"Apple",c:95,p:0.5},{n:"Tofu (50g)",c:40,p:4.5},
+ {n:"Masala Chai (with milk)",c:60,p:2},{n:"Roasted Makhana (1 Cup)",c:100,p:3}
+];
+function allFoods(){return foodDatabase.concat(S.customFoods)}
+
+/* ================= NAV ================= */
+function go(p){
+  document.querySelectorAll('.page').forEach(e=>e.classList.toggle('active',e.id==='page-'+p));
+  document.querySelectorAll('.nav-btn').forEach(b=>b.classList.toggle('active',b.dataset.page===p));
+  $('main').scrollTop=0; try{localStorage.setItem('nova_page',p)}catch(e){}
+  if(p==='settings'){drawWeightChart();drawWeekChart()}
+  if(p==='mochi'&&!$('chat').children.length) mochiSay('Hi bestie! ~uwu~ Ready to shine today? Tap a command to start! ✨');
+  render();
+}
+document.querySelectorAll('.nav-btn').forEach(b=>b.onclick=()=>go(b.dataset.page));
+
+/* ================= RENDER ================= */
+const HABITS=[['church','⛪','Attended Church / Kindness'],['prayer','🙏','Prayer & Scripture Reflection'],['sleep','🛌','Slept Before Midnight']];
+let mealTag='Breakfast';
+function setRing(id,frac,circ=238.8){$(id).style.strokeDashoffset=circ*(1-Math.min(Math.max(frac,0),1))}
+function totals(d){return {c:d.foods.reduce((a,f)=>a+f.c,0),p:d.foods.reduce((a,f)=>a+f.p,0)}}
+function render(){
+  const s=S.settings,d=day(),t=totals(d);
+  const burn=Math.round(d.steps*0.035);
+  // header
+  const h=new Date().getHours();
+  $('greeting').textContent=(h<5?'🌙 Still up? Rest soon':h<12?'☀️ Good morning':h<17?'🌸 Good afternoon':h<21?'🌆 Good evening':'🌙 Good night')+', Noah';
+  $('home-sub').textContent=`Self-Care, Study & ${s.goal}kg Journey`;
+  // weight
+  const wl=S.weights, cur=wl.length?wl[wl.length-1].w:null;
+  const total=Math.max(s.start-s.goal,0.1);
+  if(cur!=null){
+    const lost=Math.max(s.start-cur,0), rem=Math.max(cur-s.goal,0);
+    $('h-cur').textContent=cur.toFixed(1);$('h-lost').textContent=lost.toFixed(1);$('h-rem').textContent=rem.toFixed(1);
+    $('h-wbar').style.width=Math.min(lost/total*100,100)+'%';
+    $('weight-metrics').innerHTML=`Total lost: <b>${lost.toFixed(1)} kg</b> | Remaining: <b>${rem.toFixed(1)} kg</b> to target`;
+  } else {$('h-cur').textContent='--';$('h-lost').textContent='0';$('h-rem').textContent=Math.max(s.start-s.goal,0).toFixed(1);$('h-wbar').style.width='0';$('weight-metrics').textContent='No weight logged yet.'}
+  // rings
+  setRing('r-cal',t.c/s.cal);setRing('r-water',d.water/s.water);setRing('r-steps',d.steps/s.steps);
+  $('rv-cal').textContent=t.c;$('rv-water').textContent=d.water+'ml';$('rv-steps').textContent=d.steps;
+  // food
+  $('cal-text').textContent=`${t.c} / ${s.cal} kcal`;$('prot-text').textContent=`${Math.round(t.p)} / ${s.prot} g protein`;
+  $('cal-bar').style.width=Math.min(t.c/s.cal*100,100)+'%';$('prot-bar').style.width=Math.min(t.p/s.prot*100,100)+'%';
+  $('net-text').textContent=`Burned from steps: ${burn} kcal · Net: ${t.c-burn} kcal`;
+  $('meal-chips').innerHTML=['Breakfast','Lunch','Snack','Dinner'].map(m=>`<span class="chip ${m===mealTag?'on':''}" onclick="mealTag='${m}';render()">${m}</span>`).join('');
+  $('food-log').innerHTML=d.foods.length?['Breakfast','Lunch','Snack','Dinner'].map(m=>{
+    const items=d.foods.map((f,i)=>({f,i})).filter(x=>(x.f.m||'Snack')===m);
+    if(!items.length) return '';
+    return `<div style="color:var(--pink);font-size:12px;margin-top:6px">${m}</div>`+items.map(x=>`<div class="item"><span>${esc(x.f.n)} <small style="color:var(--muted)">${x.f.c}k · ${x.f.p}g</small></span><button class="btn sm danger" onclick="removeFood(${x.i})">✕</button></div>`).join('');
+  }).join(''):'<p class="sub">Nothing logged yet today.</p>';
+  // water / steps
+  $('water-display').textContent=`${d.water} / ${s.water} ml`;
+  $('water-progress').style.width=Math.min(d.water/s.water*100,100)+'%';
+  $('steps-display').textContent=`${d.steps} / ${s.steps} steps`;
+  $('steps-bar').style.width=Math.min(d.steps/s.steps*100,100)+'%';
+  $('active-burn').textContent=`Burned (est.): ${burn} kcal`;
+  $('water-interval').value=s.interval;
+  // habits
+  const hh=HABITS.map(([k,i,l])=>`<div class="toggle-row"><label style="font-size:14px;color:#fff">${i} ${l}</label><input type="checkbox" ${d.habits[k]?'checked':''} onchange="toggleHabit('${k}',this.checked)"></div>`).join('');
+  $('habit-list').innerHTML=hh;$('home-habits').innerHTML=hh;
+  $('streak').textContent=streak();
+  // reading / journal
+  $('pg-today').textContent=d.pages;
+  let wk=0;for(let i=0;i<7;i++){const k=todayStr(new Date(Date.now()-i*864e5));wk+=(S.days[k]?.pages||0)}
+  $('pg-week').textContent=wk;$('pg-total').textContent=Object.values(S.days).reduce((a,x)=>a+(x.pages||0),0);
+  if(document.activeElement!==$('book-title'))$('book-title').value=s.book||'';
+  if(document.activeElement!==$('gratitude-journal'))$('gratitude-journal').value=d.journal||'';
+  const past=Object.keys(S.days).filter(k=>k!==todayStr()&&S.days[k].journal).sort().reverse().slice(0,10);
+  $('journal-history').innerHTML=past.length?past.map(k=>`<div class="item" style="display:block"><small style="color:var(--pink)">${k}</small><br>${esc(S.days[k].journal)}</div>`).join(''):'<p class="sub">No past entries yet.</p>';
+  // study
+  syncStudy();
+  // weights list
+  $('weight-history').innerHTML=wl.slice().reverse().slice(0,20).map((x,i)=>`<div class="item"><span>${x.d} — <b>${x.w} kg</b></span><button class="btn sm danger" onclick="removeWeight(${wl.length-1-i})">✕</button></div>`).join('');
+  // settings inputs
+  [['s-start','start'],['s-goal','goal'],['s-cal','cal'],['s-prot','prot'],['s-water','water'],['s-steps','steps']].forEach(([id,k])=>{if(document.activeElement!==$(id))$(id).value=s[k]});
+  checkNudges();
+}
+function streak(){let n=0;for(let i=0;i<365;i++){const k=todayStr(new Date(Date.now()-i*864e5));const d=S.days[k];const ok=d&&HABITS.every(h=>d.habits[h[0]]);if(ok)n++;else if(i>0)break;else continue}return n}
+
+/* ================= ACTIONS ================= */
+function addFood(f){day().foods.push({n:f.n,c:f.c,p:f.p,m:mealTag});save();render();toast('Added '+f.n)}
+function addFoodByName(n){const f=allFoods().find(x=>x.n===n);if(f)addFood(f)}
+function removeFood(i){day().foods.splice(i,1);save();render()}
+function searchFood(){
+  const q=$('food-search').value.toLowerCase().trim(),box=$('search-results');
+  const list=allFoods().filter(f=>!q||f.n.toLowerCase().includes(q));
+  box.innerHTML=list.map(f=>{const i=allFoods().indexOf(f);return `<div class="item"><span>${esc(f.n)} <small style="color:var(--muted)">${f.c}k · ${f.p}g</small></span><button class="btn sm" onclick="addFood(allFoods()[${i}])">Add</button></div>`}).join('')||'<p class="sub">No match. Add it as your own food below.</p>';
+}
+function addCustomFood(){
+  const n=$('cf-name').value.trim(),c=parseFloat($('cf-cal').value),p=parseFloat($('cf-prot').value)||0;
+  if(!n||!(c>=0)){toast('Enter a name and calories');return}
+  const f={n,c:Math.round(c),p};S.customFoods.push(f);addFood(f);
+  ['cf-name','cf-cal','cf-prot'].forEach(i=>$(i).value='');searchFood();
+}
+function drinkWater(a){const d=day();d.water=Math.max(0,d.water+a);save();render()}
+function addSteps(){const v=parseInt($('steps-add').value)||0;quickSteps(v);$('steps-add').value=''}
+function quickSteps(v){const d=day();d.steps=Math.max(0,d.steps+v);save();render()}
+function savePages(){const v=parseInt($('pages-input').value)||0;if(v>0){day().pages+=v;save();render();toast('Logged '+v+' pages 📖')}$('pages-input').value=''}
+function saveBook(){S.settings.book=$('book-title').value;save()}
+function toggleHabit(k,v){day().habits[k]=v;save();render()}
+function saveJournal(){day().journal=$('gratitude-journal').value;save()}
+function saveWeight(){
+  const v=parseFloat($('weight-input').value);
+  if(v>0&&v<400){S.weights.push({d:todayStr(),w:Math.round(v*10)/10});save();$('weight-input').value='';render();drawWeightChart();toast('Weight logged ⚖️')}
+  else toast('Enter a valid weight');
+}
+function removeWeight(i){S.weights.splice(i,1);save();render();drawWeightChart()}
+function saveSettings(){
+  const g=id=>parseFloat($(id).value);
+  const m=[['s-start','start'],['s-goal','goal'],['s-cal','cal'],['s-prot','prot'],['s-water','water'],['s-steps','steps']];
+  m.forEach(([id,k])=>{const v=g(id);if(v>0)S.settings[k]=v});
+  save();render();toast('Goals saved ✨');
+}
+
+/* ================= CHARTS ================= */
+function drawWeightChart(){
+  const svg=$('wchart'),w=S.weights.slice(-30);
+  if(w.length<2){svg.innerHTML='<text x="200" y="90" fill="#9aa" font-size="12" text-anchor="middle">Log 2+ weights to see your trend</text>';return}
+  const vals=w.map(x=>x.w),mn=Math.min(...vals,S.settings.goal)-1,mx=Math.max(...vals)+1;
+  const X=i=>20+i*(360/(w.length-1)),Y=v=>150-(v-mn)/(mx-mn)*130;
+  const pts=w.map((x,i)=>X(i)+','+Y(x.w)).join(' ');
+  svg.innerHTML=`<defs><linearGradient id="lg" x1="0" x2="1"><stop offset="0" stop-color="#ff6b8b"/><stop offset="1" stop-color="#8a5cf6"/></linearGradient></defs>
+   <line x1="20" x2="380" y1="${Y(S.settings.goal)}" y2="${Y(S.settings.goal)}" stroke="#2ecc71" stroke-dasharray="4 4"/>
+   <text x="22" y="${Y(S.settings.goal)-4}" fill="#2ecc71" font-size="9">goal ${S.settings.goal}</text>
+   <polyline points="${pts}" fill="none" stroke="url(#lg)" stroke-width="3" stroke-linejoin="round" vector-effect="non-scaling-stroke"/>`+
+   w.map((x,i)=>`<circle cx="${X(i)}" cy="${Y(x.w)}" r="3.5" fill="#fff"/>`).join('');
+}
+function drawWeekChart(){
+  const svg=$('weekchart');const days=[];
+  for(let i=6;i>=0;i--){const dt=new Date(Date.now()-i*864e5),k=todayStr(dt);days.push({l:dt.toLocaleDateString('en',{weekday:'short'}),c:S.days[k]?totals(S.days[k]).c:0})}
+  const mx=Math.max(S.settings.cal*1.2,...days.map(x=>x.c));
+  const Y=v=>140-v/mx*120;
+  svg.innerHTML=`<defs><linearGradient id="bg" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="#8a5cf6"/><stop offset="1" stop-color="#4a90e2"/></linearGradient></defs>`+
+   days.map((x,i)=>{const bx=30+i*50;return `<rect x="${bx}" y="${Y(x.c)}" width="30" height="${140-Y(x.c)}" rx="6" fill="url(#bg)"/><text x="${bx+15}" y="158" fill="#bbc" font-size="10" text-anchor="middle">${x.l}</text><text x="${bx+15}" y="${Y(x.c)-4}" fill="#fff" font-size="9" text-anchor="middle">${x.c||''}</text>`}).join('')+
+   `<line x1="20" x2="390" y1="${Y(S.settings.cal)}" y2="${Y(S.settings.cal)}" stroke="#ff6b8b" stroke-dasharray="3 4"/>`;
+}
+
+/* ================= AUDIO ================= */
+const radio={anime:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-1.mp3",piano:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-2.mp3",chill:"https://www.soundhelix.com/examples/mp3/SoundHelix-Song-3.mp3"};
+let playing=false;
+function switchRadio(t){const a=$('audio-stream');$('audio-source').src=radio[t];$('track-playing').textContent='Selected: '+t.toUpperCase()+' channel';a.load();if(playing)a.play().catch(()=>{})}
+function toggleAudio(){
+  const a=$('audio-stream'),b=$('play-pause-btn');
+  if(!playing){a.play().then(()=>{playing=true;b.textContent='⏸ Pause Radio'}).catch(()=>toast('Radio needs internet'))}
+  else{a.pause();playing=false;b.textContent='▶ Play Tracks'}
+}
+const pauseAudio=()=>{if(playing)$('audio-stream').pause()}, resumeAudio=()=>{if(playing)$('audio-stream').play().catch(()=>{})};
+
+/* ================= WATER TIMER ================= */
+let wLeft=45*60,wInt=null,wTarget=0;
+function startWaterTimer(){
+  clearInterval(wInt);wTarget=Date.now()+S.settings.interval*60000;
+  wInt=setInterval(()=>{
+    const left=Math.max(0,Math.round((wTarget-Date.now())/1000));
+    const m=Math.floor(left/60),s=left%60;
+    $('water-countdown').textContent=`Next alert in: ${m}:${String(s).padStart(2,'0')}`;
+    if(left<=0){clearInterval(wInt);triggerWater()}
+  },1000);
+}
+function changeInterval(){S.settings.interval=parseInt($('water-interval').value)||45;save();startWaterTimer()}
+function triggerWater(){pauseAudio();$('water-overlay').classList.add('show');notify('💧 Time to hydrate!','Drink a glass of water.');if(navigator.vibrate)navigator.vibrate([200,100,200])}
+function testWater(){triggerWater()}
+function dismissWaterOverlay(drank){if(drank)drinkWater(250);$('water-overlay').classList.remove('show');resumeAudio();startWaterTimer()}
+
+/* ================= STUDY ================= */
+const chars={
+ aria:{a:'🌸',n:'Aria',t:'Study session complete! Get up, stretch and grab a glass of water, bestie! ~uwu~'},
+ ren:{a:'⚡',n:'Ren',t:'Boom! Crushed that focus block! Let\'s walk 200 steps right now!'},
+ sakura:{a:'❄️',n:'Sakura',t:'Deep focus achieved. Take a mindful breath and reflect on your goals.'}
+};
+let studying=false,sInt=null,sLeft=25*60,sTarget=0;
+function lvlName(l){return l>=10?'Legend':l>=7?'Master':l>=5?'Adept':l>=3?'Apprentice':'Novice'}
+function syncStudy(){
+  const c=$('anime-character').value||S.settings.character;
+  if(!studying)S.settings.character=c;
+  $('anime-character').value=S.settings.character;
+  const k=S.settings.character,xp=S.xp[k]||0,l=Math.floor(xp/300)+1;
+  $('study-avatar').textContent=chars[k].a;
+  $('companion-xp').textContent=`Level ${l} ${lvlName(l)} (${xp%300} / 300 XP)`;
+  $('xp-bar').style.width=(xp%300)/3+'%';
+  $('st-today').textContent=day().studySessions||0;$('st-total').textContent=S.sessions;
+  $('st-xp').textContent=Object.values(S.xp).reduce((a,b)=>a+b,0);
+  $('companion-list').innerHTML=Object.keys(chars).map(k=>{const x=S.xp[k]||0,l=Math.floor(x/300)+1;return `<div class="item"><span>${chars[k].a} ${chars[k].n}</span><span style="color:var(--pink)">Lv ${l} · ${x} XP</span></div>`}).join('');
+  if(!studying){sLeft=S.settings.studyLen*60;$('timer-display').textContent=fmt(sLeft)}
+}
+const fmt=s=>Math.floor(s/60)+':'+String(s%60).padStart(2,'0');
+function setStudyLen(m){if(studying)return;S.settings.studyLen=m;save();sLeft=m*60;$('timer-display').textContent=fmt(sLeft)}
+let wakeLock=null;
+async function toggleStudyTimer(){
+  const b=$('study-btn');
+  if(!studying){
+    studying=true;b.textContent='⏸ Pause';sTarget=Date.now()+sLeft*1000;
+    try{if('wakeLock' in navigator)wakeLock=await navigator.wakeLock.request('screen')}catch(e){}
+    sInt=setInterval(()=>{
+      sLeft=Math.max(0,Math.round((sTarget-Date.now())/1000));$('timer-display').textContent=fmt(sLeft);
+      if(sLeft<=0){clearInterval(sInt);releaseWake();triggerStudy()}
+    },500);
+  } else {clearInterval(sInt);studying=false;b.textContent='▶ Resume';releaseWake()}
+}
+function releaseWake(){try{wakeLock&&wakeLock.release()}catch(e){}wakeLock=null}
+function resetStudy(){clearInterval(sInt);studying=false;releaseWake();$('study-btn').textContent='▶ Start Session';sLeft=S.settings.studyLen*60;$('timer-display').textContent=fmt(sLeft)}
+function triggerStudy(){
+  pauseAudio();const c=chars[S.settings.character];
+  $('overlay-avatar').textContent=c.a;$('overlay-char-name').textContent=c.n;$('overlay-char-dialogue').textContent=c.t;
+  $('study-overlay').classList.add('show');notify('📚 Session complete!',c.n+' says take a break.');if(navigator.vibrate)navigator.vibrate([300,150,300]);
+}
+function dismissStudyOverlay(){
+  const k=S.settings.character;S.xp[k]=(S.xp[k]||0)+100;day().steps+=200;day().studySessions=(day().studySessions||0)+1;S.sessions++;
+  studying=false;$('study-btn').textContent='▶ Start Session';sLeft=S.settings.studyLen*60;$('timer-display').textContent=fmt(sLeft);
+  $('study-overlay').classList.remove('show');resumeAudio();save();render();toast('+100 XP ✨ +200 steps');
+}
+
+/* ================= MOCHI ================= */
+function mochiSay(t){const c=$('chat');c.insertAdjacentHTML('beforeend',`<div class="bub bot">🐰 ${t}</div>`);c.scrollTop=c.scrollHeight}
+function meSay(t){const c=$('chat');c.insertAdjacentHTML('beforeend',`<div class="bub me">${esc(t)}</div>`);c.scrollTop=c.scrollHeight}
+const quotes=['Patience and small daily steps can move mountains.','Be gentle with yourself. You are growing, not failing.','Progress, not perfection. ✨','Even the moon takes phases. Rest is part of the journey.','Every glass of water, every page, every kind act counts.'];
+const verses=['“I can do all things through Christ who strengthens me.” — Philippians 4:13','“Be strong and courageous. Do not be afraid.” — Joshua 1:9','“Cast all your anxiety on Him because He cares for you.” — 1 Peter 5:7'];
+function mochi(cmd){
+  cmd=cmd.toLowerCase().trim();meSay(cmd);
+  const d=day(),t=totals(d),s=S.settings;
+  if(cmd==='status')mochiSay(`Today: ${t.c} kcal, ${Math.round(t.p)}g protein, ${d.water}ml water, ${d.steps} steps, ${d.pages} pages. You're doing lovely! ✨`);
+  else if(cmd==='motivate')mochiSay(quotes[Math.floor(Math.random()*quotes.length)]+' ~uwu~');
+  else if(cmd.includes('recipe instant'))mochiSay('High-protein instant bowl: 1 cup sprouted green moong, 50g raw paneer cubes, chopped cucumber, lemon juice and a pinch of salt. No cook, no stress! 🌿');
+  else if(cmd.includes('recipe cook'))mochiSay('Warm salad: lightly stir-fry 1 cup boiled chana and 50g tofu in 1 tsp mustard oil. Toss with shredded cabbage and mint leaves. 🍲');
+  else if(cmd==='verse')mochiSay(verses[Math.floor(Math.random()*verses.length)]);
+  else if(cmd==='help')mochiSay('Try: status, motivate, recipe instant, recipe cook, verse.');
+  else mochiSay("Hmm, I didn't recognise that! Try status, motivate, recipe instant, recipe cook, verse or help.");
+}
+function sendMochi(){const i=$('ai-command-input');if(i.value.trim())mochi(i.value);i.value=''}
+
+/* ================= NUDGES / NOTIFY ================= */
+function checkNudges(){
+  const h=new Date().getHours();
+  $('late-night-banner').style.display=(h>=23||h<=4)?'block':'none';
+  $('hydration-nudge').style.display=(h>=16&&day().water<S.settings.water/2)?'block':'none';
+}
+function askNotif(){if(!('Notification' in window))return toast('Not supported on this device');Notification.requestPermission().then(p=>toast(p==='granted'?'Notifications on 🔔':'Notifications blocked'))}
+function notify(t,b){try{if('Notification' in window&&Notification.permission==='granted'&&document.hidden)new Notification(t,{body:b,icon:'icon-192.png'})}catch(e){}}
+
+/* ================= DATA TOOLS ================= */
+function exportData(){const b=new Blob([JSON.stringify(S,null,2)],{type:'application/json'});const a=document.createElement('a');a.href=URL.createObjectURL(b);a.download='nova-backup-'+todayStr()+'.json';a.click()}
+function importData(e){const f=e.target.files[0];if(!f)return;const r=new FileReader();r.onload=()=>{try{S=Object.assign(defaults(),JSON.parse(r.result));save();render();toast('Backup restored ✨')}catch(x){toast('Invalid file')}};r.readAsText(f)}
+function resetAllData(){if(confirm('Wipe ALL logs, weights and levels and start fresh?')){localStorage.removeItem(KEY);localStorage.removeItem(OLD);location.reload()}}
+
+/* ================= STARFIELD ================= */
+(function(){
+  const c=$('stars'),x=c.getContext('2d');let W,H,stars=[],shoot=null;
+  function size(){W=c.width=innerWidth;H=c.height=innerHeight;stars=Array.from({length:Math.round(W*H/7000)},()=>({x:Math.random()*W,y:Math.random()*H,r:Math.random()*1.4+.2,p:Math.random()*6.28,s:Math.random()*.02+.005,h:Math.random()<.2?'#ffb6c8':Math.random()<.4?'#b9a2ff':'#fff'}))}
+  size();addEventListener('resize',size);
+  function frame(){
+    x.clearRect(0,0,W,H);
+    stars.forEach(s=>{s.p+=s.s;x.globalAlpha=.35+.65*Math.abs(Math.sin(s.p));x.fillStyle=s.h;x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill()});
+    if(!shoot&&Math.random()<.003)shoot={x:Math.random()*W,y:Math.random()*H*.4,l:0};
+    if(shoot){x.globalAlpha=1-shoot.l/60;const g=x.createLinearGradient(shoot.x,shoot.y,shoot.x-60,shoot.y-30);g.addColorStop(0,'#fff');g.addColorStop(1,'transparent');x.strokeStyle=g;x.lineWidth=2;x.beginPath();x.moveTo(shoot.x,shoot.y);x.lineTo(shoot.x-60,shoot.y-30);x.stroke();shoot.x+=9;shoot.y+=4.5;if(++shoot.l>60)shoot=null}
+    x.globalAlpha=1;requestAnimationFrame(frame);
+  }
+  if(!matchMedia('(prefers-reduced-motion: reduce)').matches)frame();else{stars.forEach(s=>{x.globalAlpha=.7;x.fillStyle=s.h;x.beginPath();x.arc(s.x,s.y,s.r,0,6.28);x.fill()})}
+})();
+
+/* ================= INIT ================= */
+load();
+searchFood();
+render();
+startWaterTimer();
+let lastPage='home';try{lastPage=localStorage.getItem('nova_page')||'home'}catch(e){}
+go(lastPage);
+setInterval(checkNudges,60000);
+if('serviceWorker' in navigator)addEventListener('load',()=>navigator.serviceWorker.register('sw.js').catch(()=>{}));
+</script>
+</body>
+</html>
